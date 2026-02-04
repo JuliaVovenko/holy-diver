@@ -1,10 +1,13 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\",
+  "WorkspaceRootPath": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{4F64EB2E-FFBD-4BF2-A513-EC2C9AF0A30D}|Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti.vcxproj|C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{4F64EB2E-FFBD-4BF2-A513-EC2C9AF0A30D}|Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti.vcxproj|C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{4F64EB2E-FFBD-4BF2-A513-EC2C9AF0A30D}|Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti.vcxproj|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\voven\\OneDrive\\Desktop\\holy_diver.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,17 +17,30 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "holy_diver.cpp",
+              "DocumentMoniker": "C:\\Users\\voven\\OneDrive\\Desktop\\holy_diver.cpp",
+              "RelativeDocumentMoniker": "..\\..\\OneDrive\\Desktop\\holy_diver.cpp",
+              "ToolTip": "C:\\Users\\voven\\OneDrive\\Desktop\\holy_diver.cpp",
+              "RelativeToolTip": "..\\..\\OneDrive\\Desktop\\holy_diver.cpp",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-02-04T12:04:47.45Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "main.cpp",
-              "DocumentMoniker": "C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "DocumentMoniker": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
               "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
-              "ToolTip": "C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
               "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAiwG0BAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-01-14T12:10:45.058Z",
               "EditorCaption": ""
