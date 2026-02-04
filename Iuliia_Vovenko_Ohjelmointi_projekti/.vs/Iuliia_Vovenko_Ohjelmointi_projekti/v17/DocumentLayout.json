@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{4F64EB2E-FFBD-4BF2-A513-EC2C9AF0A30D}|Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti.vcxproj|C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{4F64EB2E-FFBD-4BF2-A513-EC2C9AF0A30D}|Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti.vcxproj|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "main.cpp",
+              "DocumentMoniker": "C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "ToolTip": "C:\\Users\\voven\\source\\repos\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-01-14T12:10:45.058Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
