@@ -1,10 +1,4 @@
-﻿/*
-*
-* Holy diver - HW2: movement + oxygen + reload (template structure preserved)
-*
-*/
-
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <iostream>
