@@ -7,6 +7,18 @@
 using namespace std;
 
 // =====================
+// Global game state control (required by Exercise 2)
+// =====================
+
+// Global flag used to control the main game loop
+static bool g_game_running = true;
+
+// Global function that ends the game loop
+static void gameover() {
+    g_game_running = false;
+}
+
+// =====================
 // Common structures
 // =====================
 
@@ -22,6 +34,12 @@ static bool operator==(const Position& a, const Position& b) {
 }
 
 // =====================
+// Forward declarations
+// =====================
+
+class Player;
+
+// =====================
 // Item class
 // =====================
 
@@ -30,13 +48,23 @@ enum class ItemType {
     Oxygen
 };
 
-class Player; // Forward declaration
-
 class Item {
 public:
     // Constructor
     Item(ItemType t, Position p, int v, char sym)
         : type(t), pos(p), value(v), symbol(sym) {
+    }
+
+    // Copy constructor (explicit for the exercise)
+    // NOTE: Compiler-generated copy constructor would be sufficient here,
+    // because Item only contains value types (no raw pointers / manual memory).
+    Item(const Item& other)
+        : type(other.type), pos(other.pos), value(other.value), symbol(other.symbol) {
+    }
+
+    // Destructor
+    ~Item() {
+        // No manual cleanup needed (no dynamic allocation here)
     }
 
     // Get item position
@@ -66,6 +94,18 @@ public:
         : pos(p), damage(dmg), symbol(sym) {
     }
 
+    // Copy constructor (explicit for the exercise)
+    // NOTE: Compiler-generated copy constructor would be sufficient here,
+    // because Enemy only contains value types (no raw pointers / manual memory).
+    Enemy(const Enemy& other)
+        : pos(other.pos), damage(other.damage), symbol(other.symbol) {
+    }
+
+    // Destructor
+    ~Enemy() {
+        // No manual cleanup needed (no dynamic allocation here)
+    }
+
     const Position& getPos() const { return pos; }
     char getSymbol() const { return symbol; }
     int getDamage() const { return damage; }
@@ -82,6 +122,14 @@ private:
 
 class World {
 public:
+    // Constructor
+    World() : width(0), height(0) {}
+
+    // Destructor
+    ~World() {
+        // No manual cleanup needed (vector<string> manages memory automatically)
+    }
+
     // Load map from file
     bool loadFromFile(const string& path) {
         tiles.clear();
@@ -148,6 +196,7 @@ public:
 
     // Check if tile is walkable
     bool isWalkable(int x, int y) const {
+        // 'x' is blocked, everything else is allowed
         char c = at(x, y);
         return c != 'x' && c != '\0';
     }
@@ -187,6 +236,21 @@ public:
     static constexpr int MAX_OXYGEN = 100;
     static constexpr int INIT_LIVES = 3;
 
+    // Constructor
+    Player()
+        : health(MAX_HEALTH), oxygen(MAX_OXYGEN), lives(INIT_LIVES), pos({ -1, -1 }) {
+    }
+
+    // Destructor (required by Exercise 2)
+    ~Player() {
+        // Farewell message
+        cout << "\n[Player] Goodbye! Player object is being destroyed.\n";
+
+        // Required: from Player destructor, call a global gameover() method
+        // that changes the game state to ending.
+        gameover();
+    }
+
     // Reset player statistics
     void reset() {
         health = MAX_HEALTH;
@@ -224,7 +288,7 @@ public:
             lives = 0;
     }
 
-    // Attempt to move player
+    // Attempt to move player 
     bool tryMove(World& world, int dx, int dy) {
         int nx = pos.x + dx;
         int ny = pos.y + dy;
@@ -232,11 +296,14 @@ public:
         if (!world.inBounds(nx, ny)) return false;
         if (!world.isWalkable(nx, ny)) return false;
 
+        // Old player tile becomes 'o'
         world.set(pos.x, pos.y, 'o');
+        // New tile becomes 'P'
         world.set(nx, ny, 'P');
 
         pos = { nx, ny };
 
+        // Oxygen consumption: 2 per move
         oxygen -= 2;
         if (oxygen < 0)
             oxygen = 0;
@@ -245,9 +312,9 @@ public:
     }
 
 private:
-    int health = MAX_HEALTH;
-    int oxygen = MAX_OXYGEN;
-    int lives = INIT_LIVES;
+    int health;
+    int oxygen;
+    int lives;
     Position pos;
 };
 
@@ -263,8 +330,15 @@ void Item::apply(Player& player) const {
 
 class Game {
 public:
+    // Constructor
     explicit Game(string levelPath)
         : levelPath(std::move(levelPath)) {
+    }
+
+    // Destructor
+    ~Game() {
+        // No manual cleanup needed (RAII handles it)
+        // TODO: add save system cleanup here if implemented later
     }
 
     void run() {
@@ -279,9 +353,15 @@ public:
 
         render();
 
-        while (true) {
+        // Main loop controlled by the global flag (required by Exercise 2)
+        while (g_game_running) {
             char cmd = readInput();
-            if (cmd == 'q') break;
+
+            if (cmd == 'q') {
+                // End loop explicitly if user quits
+                gameover();
+                break;
+            }
 
             update(cmd);
             render();
@@ -307,9 +387,12 @@ private:
 
         player.setPosition(p);
 
+        // Load enemies from 'M'
         for (auto& ep : world.findAll('M'))
             enemies.emplace_back(ep, 10, 'M');
 
+        // Load oxygen items from 'O'
+        // TODO: support multiple item types and values loaded from file later
         for (auto& ip : world.findAll('O'))
             items.emplace_back(ItemType::Oxygen, ip, 25, 'O');
 
