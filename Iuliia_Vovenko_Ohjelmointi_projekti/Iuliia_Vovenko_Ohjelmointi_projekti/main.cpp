@@ -1,359 +1,437 @@
-﻿#include <stdio.h>
-#include <stdlib.h>
+﻿#include <iostream>
+#include <fstream>
+#include <vector>
 #include <string>
-#include <iostream>
+#include <algorithm>
 
 using namespace std;
 
-/****************************************************/
-// declaring functions:
-/****************************************************/
-void start_splash_screen(void);
-void startup_routines(void);
-void quit_routines(void);
-bool load_level(string);          // load map from file into game_map
-void free_level(void);            // free allocated map memory
-int read_input(char*);
-void update_state(char);          // one command per turn
-void render_screen(void);
+// =====================
+// Common structures
+// =====================
 
-/****************************************************/
-// global variables:
-/****************************************************/
-char** game_map = nullptr;        // dynamic array of map strings
-int map_height = 0;               // map rows
-int map_width = 0;               // map columns (assume rectangular-ish)
+// Represents a position on the map
+struct Position {
+    int x = -1;
+    int y = -1;
+};
 
-string g_level_path = "level_0.map"; // auto map path (no user input)
-
-const int MAX_HEALTH = 100;
-const int MAX_OXYGEN = 100;
-const int INIT_LIVES = 3;
-
-typedef struct Player {
-    int health;
-    int oxygen;
-    int lives;
-    int x; // player column
-    int y; // player row
-} Player;
-
-Player player_data = { MAX_HEALTH, MAX_OXYGEN, INIT_LIVES, -1, -1 };
-
-/****************************************************/
-// helpers
-/****************************************************/
-static int my_strlen_line(const char* s)
-{
-    int n = 0;
-    while (s[n] != '\0' && s[n] != '\n' && s[n] != '\r') n++;
-    return n;
+// Position comparison operator
+static bool operator==(const Position& a, const Position& b) {
+    return a.x == b.x && a.y == b.y;
 }
 
-static bool in_bounds(int x, int y)
-{
-    return (y >= 0 && y < map_height && x >= 0 && x < map_width);
-}
+// =====================
+// Item class
+// =====================
 
-static bool is_walkable(char c)
-{
-    // 'x' is obstacle, forbidden
-    // 'o' is free
-    // 'M' is enemy square (allowed, but nothing happens for now)
-    // 'P' is player
-    return c != 'x' && c != '\0';
-}
+// Different types of items in the game
+enum class ItemType {
+    Oxygen
+};
 
-static bool find_player_on_map()
-{
-    for (int y = 0; y < map_height; y++) {
-        for (int x = 0; x < map_width; x++) {
-            if (game_map[y][x] == 'P') {
-                player_data.x = x;
-                player_data.y = y;
-                return true;
-            }
-        }
-    }
-    return false;
-}
+class Player; // Forward declaration
 
-static bool try_move_player(int dx, int dy)
-{
-    int nx = player_data.x + dx;
-    int ny = player_data.y + dy;
-
-    if (!in_bounds(nx, ny)) return false;
-
-    char target = game_map[ny][nx];
-    if (!is_walkable(target)) return false;
-
-    // move: old player square becomes free 'o'
-    game_map[player_data.y][player_data.x] = 'o';
-    // new square becomes 'P'
-    game_map[ny][nx] = 'P';
-
-    player_data.x = nx;
-    player_data.y = ny;
-
-    // oxygen consumption: 2 per move
-    player_data.oxygen -= 2;
-    if (player_data.oxygen < 0) player_data.oxygen = 0;
-
-    return true;
-}
-
-static void reset_player_stats()
-{
-    player_data.health = MAX_HEALTH;
-    player_data.oxygen = MAX_OXYGEN;
-    player_data.lives = INIT_LIVES;
-    player_data.x = -1;
-    player_data.y = -1;
-}
-
-static void reload_level()
-{
-    free_level();
-    reset_player_stats();
-
-    if (!load_level(g_level_path)) {
-        cout << "Reload failed.\n";
-        return;
-    }
-    cout << "Reloaded!\n";
-}
-
-/****************************************************************
- *
- * MAIN
- *
- ****************************************************/
-int main(void)
-{
-    start_splash_screen();
-    startup_routines();
-
-    char input;
-
-    while (true)
-    {
-        input = '\0';
-        if (0 > read_input(&input)) break; // quit if 'q'
-        update_state(input);
-        render_screen();
+class Item {
+public:
+    // Constructor
+    Item(ItemType t, Position p, int v, char sym)
+        : type(t), pos(p), value(v), symbol(sym) {
     }
 
-    quit_routines();
-    return 0;
-}
+    // Get item position
+    const Position& getPos() const { return pos; }
 
-/****************************************************************
- *
- * FUNCTION load_level
- *
- **************************************************************/
-bool load_level(string path)
-{
-    // reset map vars (in case called after free)
-    map_height = 0;
-    map_width = 0;
-    game_map = nullptr;
+    // Get item map symbol
+    char getSymbol() const { return symbol; }
 
-    FILE* file = nullptr;
-    errno_t err = fopen_s(&file, path.c_str(), "r");
-    if (err != 0 || file == nullptr) {
-        cout << "Failed to open map file: " << path << "\n";
-        return false;
+    // Apply item effect to player
+    void apply(Player& player) const;
+
+private:
+    ItemType type;
+    Position pos;
+    int value = 0;
+    char symbol = '?';
+};
+
+// =====================
+// Enemy class
+// =====================
+
+class Enemy {
+public:
+    // Constructor
+    Enemy(Position p, int dmg = 10, char sym = 'M')
+        : pos(p), damage(dmg), symbol(sym) {
     }
 
-    const int CHUNK = 8;
-    int capacity = 0;
-    char buffer[1024];
+    const Position& getPos() const { return pos; }
+    char getSymbol() const { return symbol; }
+    int getDamage() const { return damage; }
 
-    while (fgets(buffer, sizeof(buffer), file)) {
+private:
+    Position pos;
+    int damage = 10;
+    char symbol = 'M';
+};
 
-        int len = my_strlen_line(buffer);
-        if (len <= 0) continue;
+// =====================
+// World class
+// =====================
 
-        if (map_height == capacity) {
-            capacity += CHUNK;
-            char** temp = (char**)realloc(game_map, capacity * sizeof(char*));
-            if (!temp) {
-                fclose(file);
-                cout << "realloc failed!\n";
-                return false;
-            }
-            game_map = temp;
-        }
+class World {
+public:
+    // Load map from file
+    bool loadFromFile(const string& path) {
+        tiles.clear();
+        width = height = 0;
 
-        game_map[map_height] = (char*)malloc((len + 1) * sizeof(char));
-        if (!game_map[map_height]) {
-            fclose(file);
-            cout << "malloc failed!\n";
+        ifstream in(path);
+        if (!in) {
+            cout << "Failed to open map file: " << path << "\n";
             return false;
         }
 
-        for (int i = 0; i < len; i++)
-            game_map[map_height][i] = buffer[i];
+        string line;
+        while (getline(in, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line.empty()) continue;
+            tiles.push_back(line);
+        }
 
-        game_map[map_height][len] = '\0';
+        height = (int)tiles.size();
+        if (height == 0) {
+            cout << "Map file is empty or invalid.\n";
+            return false;
+        }
 
-        if (map_height == 0) map_width = len; // width from first row
-        map_height++;
+        width = (int)tiles[0].size();
+        if (width == 0) {
+            cout << "Map file is empty or invalid.\n";
+            return false;
+        }
+
+        // Ensure rectangular map shape
+        for (auto& row : tiles) {
+            if ((int)row.size() < width)
+                row += string(width - row.size(), 'x');
+            if ((int)row.size() > width)
+                row.resize(width);
+        }
+
+        return true;
     }
 
-    fclose(file);
-
-    if (map_height == 0 || map_width == 0) {
-        cout << "Map file is empty or invalid.\n";
-        return false;
+    // Render map to console
+    void render() const {
+        cout << "\n--- MAP ---\n";
+        for (const auto& row : tiles)
+            cout << row << "\n";
     }
 
-    // find player position from 'P'
-    if (!find_player_on_map()) {
-        cout << "No 'P' found on the map!\n";
-        return false;
+    // Check map boundaries
+    bool inBounds(int x, int y) const {
+        return y >= 0 && y < height && x >= 0 && x < width;
     }
 
-    return true;
+    // Get tile at position
+    char at(int x, int y) const {
+        if (!inBounds(x, y)) return '\0';
+        return tiles[y][x];
+    }
+
+    // Set tile at position
+    void set(int x, int y, char c) {
+        if (inBounds(x, y)) tiles[y][x] = c;
+    }
+
+    // Check if tile is walkable
+    bool isWalkable(int x, int y) const {
+        char c = at(x, y);
+        return c != 'x' && c != '\0';
+    }
+
+    // Find first occurrence of symbol
+    Position findFirst(char symbol) const {
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                if (tiles[y][x] == symbol)
+                    return { x, y };
+        return { -1, -1 };
+    }
+
+    // Find all occurrences of symbol
+    vector<Position> findAll(char symbol) const {
+        vector<Position> found;
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                if (tiles[y][x] == symbol)
+                    found.push_back({ x, y });
+        return found;
+    }
+
+private:
+    vector<string> tiles;
+    int width = 0;
+    int height = 0;
+};
+
+// =====================
+// Player class
+// =====================
+
+class Player {
+public:
+    static constexpr int MAX_HEALTH = 100;
+    static constexpr int MAX_OXYGEN = 100;
+    static constexpr int INIT_LIVES = 3;
+
+    // Reset player statistics
+    void reset() {
+        health = MAX_HEALTH;
+        oxygen = MAX_OXYGEN;
+        lives = INIT_LIVES;
+        pos = { -1, -1 };
+    }
+
+    void setPosition(Position p) { pos = p; }
+    const Position& getPos() const { return pos; }
+
+    int getHealth() const { return health; }
+    int getOxygen() const { return oxygen; }
+    int getLives() const { return lives; }
+
+    bool hasOxygen() const { return oxygen > 0; }
+
+    void addOxygen(int amount) {
+        oxygen += amount;
+        if (oxygen > MAX_OXYGEN)
+            oxygen = MAX_OXYGEN;
+    }
+
+    void takeDamage(int amount) {
+        health -= amount;
+        if (health < 0)
+            health = 0;
+    }
+
+    bool isDead() const { return health <= 0; }
+
+    void loseLife() {
+        lives--;
+        if (lives < 0)
+            lives = 0;
+    }
+
+    // Attempt to move player
+    bool tryMove(World& world, int dx, int dy) {
+        int nx = pos.x + dx;
+        int ny = pos.y + dy;
+
+        if (!world.inBounds(nx, ny)) return false;
+        if (!world.isWalkable(nx, ny)) return false;
+
+        world.set(pos.x, pos.y, 'o');
+        world.set(nx, ny, 'P');
+
+        pos = { nx, ny };
+
+        oxygen -= 2;
+        if (oxygen < 0)
+            oxygen = 0;
+
+        return true;
+    }
+
+private:
+    int health = MAX_HEALTH;
+    int oxygen = MAX_OXYGEN;
+    int lives = INIT_LIVES;
+    Position pos;
+};
+
+// Apply item effect
+void Item::apply(Player& player) const {
+    if (type == ItemType::Oxygen)
+        player.addOxygen(value);
 }
 
-/****************************************************************
- *
- * FUNCTION free_level
- *
- **************************************************************/
-void free_level(void)
-{
-    if (!game_map) return;
+// =====================
+// Game class
+// =====================
 
-    for (int i = 0; i < map_height; i++) {
-        free(game_map[i]);
-    }
-    free(game_map);
-
-    game_map = nullptr;
-    map_height = 0;
-    map_width = 0;
-}
-
-/****************************************************************
- *
- * FUNCTION read_input
- *
- **************************************************************/
-int read_input(char* input)
-{
-    cout << ">>>";  // prompt
-    try {
-        cin >> *input;
-    }
-    catch (...) {
-        return -1;
-    }
-    cout << endl;
-    cin.ignore(10000, '\n');
-
-    if (*input == 'q') return -2; // quit
-    return 0;
-}
-
-/****************************************************************
- *
- * FUNCTION update_state
- *
- **************************************************************/
-void update_state(char input)
-{
-    if (!game_map) return;
-
-    // reload
-    if (input == 'r') {
-        reload_level();
-        return;
+class Game {
+public:
+    explicit Game(string levelPath)
+        : levelPath(std::move(levelPath)) {
     }
 
-    // stop movement if oxygen ended (optional, but logical)
-    if (player_data.oxygen <= 0) {
-        cout << "Out of oxygen. Press 'r' to reload or 'q' to quit.\n";
-        return;
+    void run() {
+        splash();
+
+        if (!loadLevel()) {
+            cout << "Map loading failed.\n";
+            cout << "Press Enter to exit...";
+            cin.get();
+            return;
+        }
+
+        render();
+
+        while (true) {
+            char cmd = readInput();
+            if (cmd == 'q') break;
+
+            update(cmd);
+            render();
+        }
+
+        quit();
     }
 
-    bool moved = false;
+private:
+    bool loadLevel() {
+        player.reset();
+        enemies.clear();
+        items.clear();
 
-    switch (input) {
-    case 'w': moved = try_move_player(0, -1); break;
-    case 's': moved = try_move_player(0, 1); break;
-    case 'a': moved = try_move_player(-1, 0); break;
-    case 'd': moved = try_move_player(1, 0); break;
-    default:
+        if (!world.loadFromFile(levelPath))
+            return false;
+
+        Position p = world.findFirst('P');
+        if (p.x == -1) {
+            cout << "No 'P' found on the map!\n";
+            return false;
+        }
+
+        player.setPosition(p);
+
+        for (auto& ep : world.findAll('M'))
+            enemies.emplace_back(ep, 10, 'M');
+
+        for (auto& ip : world.findAll('O'))
+            items.emplace_back(ItemType::Oxygen, ip, 25, 'O');
+
+        return true;
+    }
+
+    void reloadLevel() {
+        if (!loadLevel())
+            cout << "Reload failed.\n";
+        else
+            cout << "Reloaded!\n";
+    }
+
+    char readInput() {
+        cout << ">>>";
+        char c;
+        cin >> c;
+        cout << "\n";
+        cin.ignore(10000, '\n');
+        return c;
+    }
+
+    void update(char cmd) {
+        if (cmd == 'r') {
+            reloadLevel();
+            return;
+        }
+
+        if (!player.hasOxygen()) {
+            cout << "Out of oxygen. Press 'r' to reload or 'q' to quit.\n";
+            return;
+        }
+
+        bool moved = false;
+
+        switch (cmd) {
+        case 'w': moved = player.tryMove(world, 0, -1); break;
+        case 's': moved = player.tryMove(world, 0, 1); break;
+        case 'a': moved = player.tryMove(world, -1, 0); break;
+        case 'd': moved = player.tryMove(world, 1, 0); break;
+        default:
+            cout << "Commands: w/a/s/d move, r reload, q quit\n";
+            return;
+        }
+
+        if (!moved) {
+            cout << "Can't move there!\n";
+            return;
+        }
+
+        handleItemPickup();
+        handleEnemyContact();
+        handleDeathIfNeeded();
+    }
+
+    void handleItemPickup() {
+        Position p = player.getPos();
+
+        auto it = find_if(items.begin(), items.end(),
+            [&](const Item& item) { return item.getPos() == p; });
+
+        if (it != items.end()) {
+            it->apply(player);
+            cout << "Picked up oxygen!\n";
+            items.erase(it);
+        }
+    }
+
+    void handleEnemyContact() {
+        Position p = player.getPos();
+
+        auto it = find_if(enemies.begin(), enemies.end(),
+            [&](const Enemy& e) { return e.getPos() == p; });
+
+        if (it != enemies.end()) {
+            player.takeDamage(it->getDamage());
+            cout << "Enemy hit you! -" << it->getDamage() << " HP\n";
+        }
+    }
+
+    void handleDeathIfNeeded() {
+        if (!player.isDead()) return;
+
+        player.loseLife();
+        cout << "You died. Lives left: " << player.getLives() << "\n";
+
+        reloadLevel();
+    }
+
+    void render() {
+        world.render();
+        cout << "Health: " << player.getHealth() << "\n";
+        cout << "Oxygen: " << player.getOxygen() << "%\n";
+        cout << "Lives:  " << player.getLives() << "\n";
+    }
+
+    void splash() {
+        cout << "\nWELCOME to epic Holy Diver v0.01\n";
         cout << "Commands: w/a/s/d move, r reload, q quit\n";
-        return;
+        cout << "Map loads automatically: " << levelPath << "\n\n";
     }
 
-    if (!moved) {
-        cout << "Can't move there!\n";
-    }
-}
-
-/****************************************************************
- *
- * FUNCTION render_screen
- *
- **************************************************************/
-void render_screen(void)
-{
-    if (!game_map) return;
-
-    cout << "\n--- MAP ---\n";
-    for (int i = 0; i < map_height; i++) {
-        cout << game_map[i] << "\n";
-    }
-    cout << "Oxygen: " << player_data.oxygen << "%\n";
-}
-
-/****************************************************************
- *
- * FUNCTION start_splash_screen
- *
- **************************************************************/
-void start_splash_screen(void)
-{
-    cout << endl << "WELCOME to epic Holy Diver v0.01" << endl;
-    cout << "Enter commands and enjoy! (press q to quit at all times)" << endl;
-    cout << "Commands: w/a/s/d move, r reload, q quit" << endl;
-    cout << "Map loads automatically: " << g_level_path << endl << endl;
-}
-
-/****************************************************************
- *
- * FUNCTION startup_routines
- *
- **************************************************************/
-void startup_routines(void)
-{
-    reset_player_stats();
-
-    if (!load_level(g_level_path)) {
-        cout << "Map loading failed.\n";
+    void quit() {
+        cout << "\nBYE! Welcome back soon.\n";
         cout << "Press Enter to exit...";
         cin.get();
-        exit(1);
     }
 
-    render_screen();
-}
+private:
+    string levelPath;
+    World world;
+    Player player;
+    vector<Enemy> enemies;
+    vector<Item> items;
+};
 
-/****************************************************************
- *
- * FUNCTION quit_routines
- *
- **************************************************************/
-void quit_routines(void)
-{
-    free_level();
-    cout << endl << "BYE! Welcome back soon." << endl;
-    cout << "Press Enter to exit...";
-    cin.get();
+// =====================
+// Main function
+// =====================
+
+int main() {
+    Game game("level_0.map");
+    game.run();
+    return 0;
 }
