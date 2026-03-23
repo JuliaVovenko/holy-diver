@@ -210,7 +210,7 @@ public:
     }
 
     void move(World&) override {
-        // stationary enemy does nothing
+        // Stationary enemy does not move
     }
 };
 
@@ -299,29 +299,8 @@ public:
         return player;
     }
 
-    Player& getPlayer() {
-        return player;
-    }
-
     bool isPlayerDead() const {
         return player.isDead();
-    }
-
-    bool inBounds(int x, int y) const {
-        return x >= 0 && x < width && y >= 0 && y < height;
-    }
-
-    bool isVisible(int x, int y) const {
-        if (!inBounds(x, y)) {
-            return false;
-        }
-        return visible[y][x];
-    }
-
-    void reveal(int x, int y) {
-        if (inBounds(x, y)) {
-            visible[y][x] = true;
-        }
     }
 
     void render() const {
@@ -413,56 +392,8 @@ public:
         return true;
     }
 
-    void updateEnemiesOnly() {
-        activateSeenEnemies();
-        moveEnemies();
-    }
-
-    Enemy* getEnemyAtMutable(int x, int y) {
-        for (auto& enemy : enemies) {
-            Position ep = enemy->getPosition();
-            if (ep.x == x && ep.y == y) {
-                return enemy.get();
-            }
-        }
-        return nullptr;
-    }
-
-    const Enemy* getEnemyAt(int x, int y) const {
-        for (const auto& enemy : enemies) {
-            Position ep = enemy->getPosition();
-            if (ep.x == x && ep.y == y) {
-                return enemy.get();
-            }
-        }
-        return nullptr;
-    }
-
-    bool tryMoveEnemy(Enemy& enemy, int dx, int dy) {
-        Position oldPos = enemy.getPosition();
-        Position newPos{ oldPos.x + dx, oldPos.y + dy };
-
-        if (!inBounds(newPos.x, newPos.y)) {
-            return false;
-        }
-
-        if (!isWalkableBase(newPos.x, newPos.y)) {
-            return false;
-        }
-
-        if (isEnemyAt(newPos.x, newPos.y)) {
-            return false;
-        }
-
-        Position pp = player.getPosition();
-        if (pp == newPos) {
-            player.takeDamage(enemy.giveDamage());
-            cout << "Enemy hit you! -" << enemy.giveDamage() << " HP\n";
-            return false;
-        }
-
-        enemy.setPosition(newPos);
-        return true;
+    bool inBounds(int x, int y) const {
+        return x >= 0 && x < width && y >= 0 && y < height;
     }
 
 private:
@@ -538,6 +469,39 @@ private:
         return c != '\0' && c != 'x';
     }
 
+    bool isVisible(int x, int y) const {
+        if (!inBounds(x, y)) {
+            return false;
+        }
+        return visible[y][x];
+    }
+
+    void reveal(int x, int y) {
+        if (inBounds(x, y)) {
+            visible[y][x] = true;
+        }
+    }
+
+    const Enemy* getEnemyAt(int x, int y) const {
+        for (const auto& enemy : enemies) {
+            Position ep = enemy->getPosition();
+            if (ep.x == x && ep.y == y) {
+                return enemy.get();
+            }
+        }
+        return nullptr;
+    }
+
+    Enemy* getEnemyAtMutable(int x, int y) {
+        for (auto& enemy : enemies) {
+            Position ep = enemy->getPosition();
+            if (ep.x == x && ep.y == y) {
+                return enemy.get();
+            }
+        }
+        return nullptr;
+    }
+
     bool isEnemyAt(int x, int y) const {
         return getEnemyAt(x, y) != nullptr;
     }
@@ -581,6 +545,34 @@ private:
             cout << "Picked up oxygen!\n";
             items.erase(it);
         }
+    }
+
+public:
+    bool tryMoveEnemy(Enemy& enemy, int dx, int dy) {
+        Position oldPos = enemy.getPosition();
+        Position newPos{ oldPos.x + dx, oldPos.y + dy };
+
+        if (!inBounds(newPos.x, newPos.y)) {
+            return false;
+        }
+
+        if (!isWalkableBase(newPos.x, newPos.y)) {
+            return false;
+        }
+
+        if (isEnemyAt(newPos.x, newPos.y)) {
+            return false;
+        }
+
+        Position pp = player.getPosition();
+        if (pp == newPos) {
+            player.takeDamage(enemy.giveDamage());
+            cout << "Enemy hit you! -" << enemy.giveDamage() << " HP\n";
+            return false;
+        }
+
+        enemy.setPosition(newPos);
+        return true;
     }
 
 private:
@@ -750,6 +742,10 @@ int main() {
 
     cout << "Enter map file path: ";
     getline(cin, mapPath);
+
+    if (!mapPath.empty() && mapPath.front() == '"' && mapPath.back() == '"') {
+        mapPath = mapPath.substr(1, mapPath.size() - 2);
+    }
 
     if (mapPath.empty()) {
         cout << "No file path provided.\n";
