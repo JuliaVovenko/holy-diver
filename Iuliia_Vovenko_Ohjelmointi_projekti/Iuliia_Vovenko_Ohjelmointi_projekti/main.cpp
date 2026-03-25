@@ -101,6 +101,13 @@ public:
         }
     }
 
+    void addBattery(int amount) {
+        battery += amount;
+        if (battery > MAX_BATTERY) {
+            battery = MAX_BATTERY;
+        }
+    }
+
     bool canSpendBattery(int amount) const {
         return battery >= amount;
     }
@@ -127,15 +134,13 @@ private:
 // Items
 // =====================
 
-enum class ItemType {
-    Oxygen
-};
-
 class Item {
 public:
-    Item(ItemType type, Position pos, int value, char symbol)
-        : type(type), pos(pos), value(value), symbol(symbol) {
+    Item(Position pos, int value, char symbol)
+        : pos(pos), value(value), symbol(symbol) {
     }
+
+    virtual ~Item() = default;
 
     const Position& getPosition() const {
         return pos;
@@ -145,17 +150,43 @@ public:
         return symbol;
     }
 
-    void apply(Player& player) const {
-        if (type == ItemType::Oxygen) {
-            player.addOxygen(value);
-        }
-    }
+    virtual void apply(Player& player) const = 0;
+    virtual string getPickupMessage() const = 0;
 
-private:
-    ItemType type = ItemType::Oxygen;
+protected:
     Position pos;
     int value = 0;
     char symbol = '?';
+};
+
+class OxygenItem : public Item {
+public:
+    OxygenItem(Position pos, int value = 25, char symbol = 'O')
+        : Item(pos, value, symbol) {
+    }
+
+    void apply(Player& player) const override {
+        player.addOxygen(value);
+    }
+
+    string getPickupMessage() const override {
+        return "Picked up extra oxygen!";
+    }
+};
+
+class BatteryItem : public Item {
+public:
+    BatteryItem(Position pos, int value = 20, char symbol = 'B')
+        : Item(pos, value, symbol) {
+    }
+
+    void apply(Player& player) const override {
+        player.addBattery(value);
+    }
+
+    string getPickupMessage() const override {
+        return "Picked up battery!";
+    }
 };
 
 // =====================
@@ -326,6 +357,12 @@ public:
                     continue;
                 }
 
+                const Item* item = getItemAt(x, y);
+                if (item != nullptr) {
+                    cout << item->getSymbol();
+                    continue;
+                }
+
                 cout << tiles[y][x];
             }
             cout << "\n";
@@ -396,6 +433,33 @@ public:
         return x >= 0 && x < width && y >= 0 && y < height;
     }
 
+    bool tryMoveEnemy(Enemy& enemy, int dx, int dy) {
+        Position oldPos = enemy.getPosition();
+        Position newPos{ oldPos.x + dx, oldPos.y + dy };
+
+        if (!inBounds(newPos.x, newPos.y)) {
+            return false;
+        }
+
+        if (!isWalkableBase(newPos.x, newPos.y)) {
+            return false;
+        }
+
+        if (isEnemyAt(newPos.x, newPos.y)) {
+            return false;
+        }
+
+        Position pp = player.getPosition();
+        if (pp == newPos) {
+            player.takeDamage(enemy.giveDamage());
+            cout << "Enemy hit you! -" << enemy.giveDamage() << " HP\n";
+            return false;
+        }
+
+        enemy.setPosition(newPos);
+        return true;
+    }
+
 private:
     bool extractObjectsFromMap() {
         Position playerPos = findFirst('P');
@@ -422,7 +486,14 @@ private:
 
         vector<Position> oxygenPositions = findAll('O');
         for (const Position& pos : oxygenPositions) {
-            items.emplace_back(ItemType::Oxygen, pos, 25, 'O');
+            items.push_back(make_unique<OxygenItem>(pos, 25, 'O'));
+            setTile(pos.x, pos.y, 'o');
+        }
+
+        vector<Position> batteryPositions = findAll('B');
+        for (const Position& pos : batteryPositions) {
+            items.push_back(make_unique<BatteryItem>(pos, 20, 'B'));
+            setTile(pos.x, pos.y, 'o');
         }
 
         return true;
@@ -506,6 +577,16 @@ private:
         return getEnemyAt(x, y) != nullptr;
     }
 
+    const Item* getItemAt(int x, int y) const {
+        for (const auto& item : items) {
+            Position ip = item->getPosition();
+            if (ip.x == x && ip.y == y) {
+                return item.get();
+            }
+        }
+        return nullptr;
+    }
+
     bool inPlayerFieldOfView(const Position& enemyPos) const {
         Position pp = player.getPosition();
         int dx = enemyPos.x - pp.x;
@@ -535,44 +616,15 @@ private:
         Position pp = player.getPosition();
 
         auto it = find_if(items.begin(), items.end(),
-            [&](const Item& item) {
-                return item.getPosition() == pp;
+            [&](const unique_ptr<Item>& item) {
+                return item->getPosition() == pp;
             });
 
         if (it != items.end()) {
-            it->apply(player);
-            setTile(pp.x, pp.y, 'o');
-            cout << "Picked up oxygen!\n";
+            (*it)->apply(player);
+            cout << (*it)->getPickupMessage() << "\n";
             items.erase(it);
         }
-    }
-
-public:
-    bool tryMoveEnemy(Enemy& enemy, int dx, int dy) {
-        Position oldPos = enemy.getPosition();
-        Position newPos{ oldPos.x + dx, oldPos.y + dy };
-
-        if (!inBounds(newPos.x, newPos.y)) {
-            return false;
-        }
-
-        if (!isWalkableBase(newPos.x, newPos.y)) {
-            return false;
-        }
-
-        if (isEnemyAt(newPos.x, newPos.y)) {
-            return false;
-        }
-
-        Position pp = player.getPosition();
-        if (pp == newPos) {
-            player.takeDamage(enemy.giveDamage());
-            cout << "Enemy hit you! -" << enemy.giveDamage() << " HP\n";
-            return false;
-        }
-
-        enemy.setPosition(newPos);
-        return true;
     }
 
 private:
@@ -584,7 +636,7 @@ private:
 
     Player player;
     vector<unique_ptr<Enemy>> enemies;
-    vector<Item> items;
+    vector<unique_ptr<Item>> items;
 };
 
 void MovingEnemy::move(World& world) {
@@ -648,12 +700,19 @@ public:
 
 private:
     void showIntro() const {
-        cout << "Development of the Holy Diver Game\n";
+        cout << "Epic Holy Diver Game\n";
         cout << "Commands:\n";
         cout << "  w/a/s/d - move\n";
         cout << "  i/j/k/l - illuminate adjacent tile\n";
         cout << "  r       - reload field and game state\n";
         cout << "  q       - quit\n\n";
+        cout << "Map symbols:\n";
+        cout << "  x - wall\n";
+        cout << "  o - floor\n";
+        cout << "  P - player start\n";
+        cout << "  M - enemy\n";
+        cout << "  O - oxygen item\n";
+        cout << "  B - battery item\n\n";
     }
 
     char readCommand() const {
