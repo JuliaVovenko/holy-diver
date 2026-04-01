@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <random>
 #include <limits>
+#include <cctype>
 
 using namespace std;
 
@@ -57,7 +58,17 @@ public:
         health = MAX_HEALTH;
         oxygen = MAX_OXYGEN;
         battery = MAX_BATTERY;
+        score = 0;
         pos = { -1, -1 };
+    }
+
+    void resetPositionOnly() {
+        pos = { -1, -1 };
+    }
+
+    void refillForNewLevel() {
+        oxygen = MAX_OXYGEN;
+        battery = MAX_BATTERY;
     }
 
     void setPosition(Position p) {
@@ -78,6 +89,17 @@ public:
 
     int getBattery() const {
         return battery;
+    }
+
+    int getScore() const {
+        return score;
+    }
+
+    void addScore(int amount) {
+        score += amount;
+        if (score < 0) {
+            score = 0;
+        }
     }
 
     void takeDamage(int amount) {
@@ -127,6 +149,7 @@ private:
     int health = MAX_HEALTH;
     int oxygen = MAX_OXYGEN;
     int battery = MAX_BATTERY;
+    int score = 0;
     Position pos;
 };
 
@@ -136,8 +159,8 @@ private:
 
 class Item {
 public:
-    Item(Position pos, int value, char symbol)
-        : pos(pos), value(value), symbol(symbol) {
+    Item(Position pos, int value, char symbol, int scoreValue)
+        : pos(pos), value(value), symbol(symbol), scoreValue(scoreValue) {
     }
 
     virtual ~Item() = default;
@@ -150,6 +173,10 @@ public:
         return symbol;
     }
 
+    int getScoreValue() const {
+        return scoreValue;
+    }
+
     virtual void apply(Player& player) const = 0;
     virtual string getPickupMessage() const = 0;
 
@@ -157,35 +184,38 @@ protected:
     Position pos;
     int value = 0;
     char symbol = '?';
+    int scoreValue = 0;
 };
 
 class OxygenItem : public Item {
 public:
-    OxygenItem(Position pos, int value = 25, char symbol = 'O')
-        : Item(pos, value, symbol) {
+    OxygenItem(Position pos, int value = 25, char symbol = 'O', int scoreValue = 10)
+        : Item(pos, value, symbol, scoreValue) {
     }
 
     void apply(Player& player) const override {
         player.addOxygen(value);
+        player.addScore(getScoreValue());
     }
 
     string getPickupMessage() const override {
-        return "Picked up extra oxygen!";
+        return "Picked up extra oxygen! +10 score";
     }
 };
 
 class BatteryItem : public Item {
 public:
-    BatteryItem(Position pos, int value = 20, char symbol = 'B')
-        : Item(pos, value, symbol) {
+    BatteryItem(Position pos, int value = 20, char symbol = 'B', int scoreValue = 10)
+        : Item(pos, value, symbol, scoreValue) {
     }
 
     void apply(Player& player) const override {
         player.addBattery(value);
+        player.addScore(getScoreValue());
     }
 
     string getPickupMessage() const override {
-        return "Picked up battery!";
+        return "Picked up battery! +10 score";
     }
 };
 
@@ -262,7 +292,7 @@ class World {
 public:
     World() = default;
 
-    bool loadFromFile(const string& filePath) {
+    bool loadFromFile(const string& filePath, bool keepPlayerState = false) {
         originalMapPath = filePath;
 
         tiles.clear();
@@ -271,6 +301,8 @@ public:
         items.clear();
         width = 0;
         height = 0;
+        totalItemsOnLevel = 0;
+        collectedItemsOnLevel = 0;
 
         ifstream in(filePath);
         if (!in) {
@@ -310,7 +342,13 @@ public:
         }
 
         visible.assign(height, vector<bool>(width, false));
-        player.reset();
+
+        if (!keepPlayerState) {
+            player.reset();
+        }
+        else {
+            player.resetPositionOnly();
+        }
 
         if (!extractObjectsFromMap()) {
             return false;
@@ -323,7 +361,11 @@ public:
         if (originalMapPath.empty()) {
             return false;
         }
-        return loadFromFile(originalMapPath);
+        return loadFromFile(originalMapPath, false);
+    }
+
+    Player& getPlayer() {
+        return player;
     }
 
     const Player& getPlayer() const {
@@ -332,6 +374,22 @@ public:
 
     bool isPlayerDead() const {
         return player.isDead();
+    }
+
+    bool isLevelCompleted() const {
+        return totalItemsOnLevel > 0 && collectedItemsOnLevel == totalItemsOnLevel && !player.isDead();
+    }
+
+    int getCollectedItemsOnLevel() const {
+        return collectedItemsOnLevel;
+    }
+
+    int getTotalItemsOnLevel() const {
+        return totalItemsOnLevel;
+    }
+
+    int getLevelScore() const {
+        return player.getScore();
     }
 
     void render() const {
@@ -368,9 +426,11 @@ public:
             cout << "\n";
         }
 
-        cout << "Health:  " << player.getHealth() << "\n";
-        cout << "Oxygen:  " << player.getOxygen() << "%\n";
-        cout << "Battery: " << player.getBattery() << "%\n";
+        cout << "Health:   " << player.getHealth() << "\n";
+        cout << "Oxygen:   " << player.getOxygen() << "%\n";
+        cout << "Battery:  " << player.getBattery() << "%\n";
+        cout << "Score:    " << player.getScore() << "\n";
+        cout << "Items:    " << collectedItemsOnLevel << "/" << totalItemsOnLevel << "\n";
     }
 
     bool requestPlayerMove(int dx, int dy) {
@@ -486,16 +546,17 @@ private:
 
         vector<Position> oxygenPositions = findAll('O');
         for (const Position& pos : oxygenPositions) {
-            items.push_back(make_unique<OxygenItem>(pos, 25, 'O'));
+            items.push_back(make_unique<OxygenItem>(pos, 25, 'O', 10));
             setTile(pos.x, pos.y, 'o');
         }
 
         vector<Position> batteryPositions = findAll('B');
         for (const Position& pos : batteryPositions) {
-            items.push_back(make_unique<BatteryItem>(pos, 20, 'B'));
+            items.push_back(make_unique<BatteryItem>(pos, 20, 'B', 10));
             setTile(pos.x, pos.y, 'o');
         }
 
+        totalItemsOnLevel = static_cast<int>(items.size());
         return true;
     }
 
@@ -622,8 +683,14 @@ private:
 
         if (it != items.end()) {
             (*it)->apply(player);
+            collectedItemsOnLevel++;
             cout << (*it)->getPickupMessage() << "\n";
+            cout << "Collected items: " << collectedItemsOnLevel << "/" << totalItemsOnLevel << "\n";
             items.erase(it);
+
+            if (collectedItemsOnLevel == totalItemsOnLevel && totalItemsOnLevel > 0) {
+                cout << "\nAll items on this level collected!\n";
+            }
         }
     }
 
@@ -633,6 +700,9 @@ private:
     vector<vector<bool>> visible;
     int width = 0;
     int height = 0;
+
+    int totalItemsOnLevel = 0;
+    int collectedItemsOnLevel = 0;
 
     Player player;
     vector<unique_ptr<Enemy>> enemies;
@@ -668,20 +738,21 @@ void MovingEnemy::move(World& world) {
 
 class Game {
 public:
-    explicit Game(string mapPath)
-        : mapPath(move(mapPath)) {
+    explicit Game(string firstMapPath)
+        : currentMapPath(move(firstMapPath)) {
     }
 
     void run() {
         showIntro();
 
-        if (!world.loadFromFile(mapPath)) {
+        if (!world.loadFromFile(currentMapPath, false)) {
             cout << "Could not start the game.\n";
             waitForExit();
             return;
         }
 
         running = true;
+        levelNumber = extractLevelNumber(currentMapPath);
 
         while (running) {
             world.render();
@@ -689,6 +760,11 @@ public:
             if (world.isPlayerDead()) {
                 showDeathMessage();
                 break;
+            }
+
+            if (world.isLevelCompleted()) {
+                finishCurrentLevel();
+                continue;
             }
 
             char command = readCommand();
@@ -752,6 +828,7 @@ private:
         case 'r':
             if (world.reload()) {
                 cout << "Game state reloaded.\n";
+                totalCollectedItems = 0;
             }
             else {
                 cout << "Reload failed.\n";
@@ -767,6 +844,33 @@ private:
         }
     }
 
+    void finishCurrentLevel() {
+        totalCollectedItems += world.getCollectedItemsOnLevel();
+
+        cout << "\n=== LEVEL COMPLETED ===\n";
+        cout << "Level " << levelNumber << " finished.\n";
+        cout << "Session collected items: " << totalCollectedItems << "\n";
+        cout << "Total score: " << world.getPlayer().getScore() << "\n";
+
+        string nextMapPath = buildNextLevelPath(currentMapPath);
+
+        world.getPlayer().refillForNewLevel();
+
+        if (!world.loadFromFile(nextMapPath, true)) {
+            cout << "\nNo next level found. You completed all available levels!\n";
+            cout << "Final score: " << world.getPlayer().getScore() << "\n";
+            cout << "Total collected items: " << totalCollectedItems << "\n";
+            running = false;
+            return;
+        }
+
+        currentMapPath = nextMapPath;
+        levelNumber++;
+
+        cout << "\nLoading next level: " << currentMapPath << "\n";
+        cout << "Oxygen and battery restored for the new level.\n\n";
+    }
+
     void showDeathMessage() const {
         const Player& player = world.getPlayer();
 
@@ -779,6 +883,9 @@ private:
         else {
             cout << "\nGame Over.\n";
         }
+
+        cout << "Final score: " << player.getScore() << "\n";
+        cout << "Collected items in session: " << totalCollectedItems + world.getCollectedItemsOnLevel() << "\n";
     }
 
     void waitForExit() const {
@@ -786,10 +893,55 @@ private:
         cin.get();
     }
 
+    int extractLevelNumber(const string& path) const {
+        int number = 0;
+        bool found = false;
+
+        for (char c : path) {
+            if (isdigit(static_cast<unsigned char>(c))) {
+                found = true;
+                number = number * 10 + (c - '0');
+            }
+        }
+
+        return found ? number : 1;
+    }
+
+    string buildNextLevelPath(const string& currentPath) const {
+        string result = currentPath;
+
+        int lastDigitPos = -1;
+        for (int i = static_cast<int>(result.size()) - 1; i >= 0; --i) {
+            if (isdigit(static_cast<unsigned char>(result[i]))) {
+                lastDigitPos = i;
+                break;
+            }
+        }
+
+        if (lastDigitPos == -1) {
+            return result + "2";
+        }
+
+        int firstDigitPos = lastDigitPos;
+        while (firstDigitPos - 1 >= 0 &&
+            isdigit(static_cast<unsigned char>(result[firstDigitPos - 1]))) {
+            firstDigitPos--;
+        }
+
+        int currentNumber = stoi(result.substr(firstDigitPos, lastDigitPos - firstDigitPos + 1));
+        int nextNumber = currentNumber + 1;
+
+        result.replace(firstDigitPos, lastDigitPos - firstDigitPos + 1, to_string(nextNumber));
+        return result;
+    }
+
 private:
-    string mapPath;
+    string currentMapPath;
     World world;
     bool running = false;
+
+    int totalCollectedItems = 0;
+    int levelNumber = 1;
 };
 
 // =====================
