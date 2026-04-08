@@ -30,7 +30,8 @@
               "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\level.map",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-03-25T12:29:32.573Z"
+              "WhenOpened": "2026-03-25T12:29:32.573Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -38,8 +39,8 @@
               "Title": "main.cpp",
               "DocumentMoniker": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
               "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
-              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp*",
-              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp*",
+              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
+              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
               "ViewState": "AgIAAKMDAAAAAAAAAAAiwMkDAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-01-14T12:10:45.058Z",
