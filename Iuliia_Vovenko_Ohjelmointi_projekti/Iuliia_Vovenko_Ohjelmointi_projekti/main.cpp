@@ -36,10 +36,6 @@ public:
     }
 };
 
-// =====================
-// Forward declarations
-// =====================
-
 class World;
 
 // =====================
@@ -51,8 +47,6 @@ public:
     static constexpr int MAX_HEALTH = 100;
     static constexpr int MAX_OXYGEN = 100;
     static constexpr int MAX_BATTERY = 100;
-
-    Player() = default;
 
     void reset() {
         health = MAX_HEALTH;
@@ -271,7 +265,7 @@ public:
     }
 
     void move(World&) override {
-        // Stationary enemy does not move
+        // Stationary enemies intentionally do not move.
     }
 };
 
@@ -290,8 +284,6 @@ public:
 
 class World {
 public:
-    World() = default;
-
     bool loadFromFile(const string& filePath, bool keepPlayerState = false) {
         originalMapPath = filePath;
 
@@ -350,18 +342,14 @@ public:
             player.resetPositionOnly();
         }
 
-        if (!extractObjectsFromMap()) {
-            return false;
-        }
-
-        return true;
+        return extractObjectsFromMap();
     }
 
-    bool reload() {
+    bool reload(bool keepPlayerState = false) {
         if (originalMapPath.empty()) {
             return false;
         }
-        return loadFromFile(originalMapPath, false);
+        return loadFromFile(originalMapPath, keepPlayerState);
     }
 
     Player& getPlayer() {
@@ -388,8 +376,11 @@ public:
         return totalItemsOnLevel;
     }
 
-    int getLevelScore() const {
-        return player.getScore();
+    double getCollectedRatio() const {
+        if (totalItemsOnLevel == 0) {
+            return 0.0;
+        }
+        return static_cast<double>(collectedItemsOnLevel) / totalItemsOnLevel;
     }
 
     void render() const {
@@ -440,10 +431,12 @@ public:
         Position newPos{ oldPos.x + dx, oldPos.y + dy };
 
         if (!inBounds(newPos.x, newPos.y)) {
+            cout << "You cannot move outside the map.\n";
             return false;
         }
 
         if (!isWalkableBase(newPos.x, newPos.y)) {
+            cout << "Wall blocks the way.\n";
             return false;
         }
 
@@ -536,6 +529,7 @@ private:
         for (const Position& pos : enemyPositions) {
             setTile(pos.x, pos.y, 'o');
 
+            // Random enemy type makes each playthrough slightly different.
             if (Random::nextInt(0, 1) == 0) {
                 enemies.push_back(make_unique<StationaryEnemy>(pos));
             }
@@ -744,6 +738,7 @@ public:
 
     void run() {
         showIntro();
+        showHallOfFame();
 
         if (!world.loadFromFile(currentMapPath, false)) {
             cout << "Could not start the game.\n";
@@ -776,12 +771,20 @@ public:
 
 private:
     void showIntro() const {
-        cout << "Epic Holy Diver Game\n";
+        cout << "Epic Holy Diver Game\n\n";
+
+        cout << "Goal:\n";
+        cout << "  Collect all treasures/items on each underwater map.\n";
+        cout << "  Manage oxygen, battery and health carefully.\n\n";
+
         cout << "Commands:\n";
         cout << "  w/a/s/d - move\n";
         cout << "  i/j/k/l - illuminate adjacent tile\n";
-        cout << "  r       - reload field and game state\n";
+        cout << "  e       - abort current level safely\n";
+        cout << "  r       - restart current map from beginning\n";
+        cout << "  h       - show hall of fame\n";
         cout << "  q       - quit\n\n";
+
         cout << "Map symbols:\n";
         cout << "  x - wall\n";
         cout << "  o - floor\n";
@@ -793,10 +796,14 @@ private:
 
     char readCommand() const {
         cout << ">>> ";
-        char c;
-        cin >> c;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return c;
+        string input;
+        getline(cin, input);
+
+        if (input.empty()) {
+            return '\0';
+        }
+
+        return static_cast<char>(tolower(static_cast<unsigned char>(input[0])));
     }
 
     void handleCommand(char command) {
@@ -825,23 +832,100 @@ private:
         case 'l':
             world.illuminateTile(1, 0);
             break;
+        case 'e':
+            abortCurrentLevel();
+            break;
         case 'r':
-            if (world.reload()) {
-                cout << "Game state reloaded.\n";
-                totalCollectedItems = 0;
-            }
-            else {
-                cout << "Reload failed.\n";
-            }
+            restartCurrentMap();
+            break;
+        case 'h':
+            showHallOfFame();
             break;
         case 'q':
             running = false;
             cout << "Quitting game.\n";
             break;
+        case '\0':
+            cout << "Empty command. Please enter one command character.\n";
+            break;
         default:
-            cout << "Unknown command.\n";
+            cout << "Unknown command. Use w/a/s/d, i/j/k/l, e, r, h or q.\n";
             break;
         }
+    }
+
+    void restartCurrentMap() {
+        if (world.reload(false)) {
+            cout << "Current map restarted from the beginning.\n";
+        }
+        else {
+            cout << "Restart failed.\n";
+        }
+    }
+
+    void abortCurrentLevel() {
+        int collected = world.getCollectedItemsOnLevel();
+        int total = world.getTotalItemsOnLevel();
+        double ratio = world.getCollectedRatio();
+
+        cout << "\n=== LEVEL ABORTED ===\n";
+        cout << "You surfaced safely.\n";
+        cout << "Items found on this level are lost: " << collected << "/" << total << "\n";
+
+        cout << "\nChoose what to do next:\n";
+        cout << "  1 - restart the same map\n";
+
+        if (levelNumber > 1) {
+            cout << "  2 - return to previous map and start it from beginning\n";
+        }
+
+        if (ratio >= 0.5) {
+            cout << "  3 - continue to next map because at least 50% was found\n";
+        }
+
+        cout << "Choice: ";
+
+        string input;
+        getline(cin, input);
+
+        if (input == "1") {
+            restartCurrentMap();
+            return;
+        }
+
+        if (input == "2" && levelNumber > 1) {
+            string previousMap = buildPreviousLevelPath(currentMapPath);
+
+            if (world.loadFromFile(previousMap, false)) {
+                currentMapPath = previousMap;
+                levelNumber--;
+                cout << "Returned to previous map: " << currentMapPath << "\n";
+            }
+            else {
+                cout << "Previous map could not be loaded. Restarting current map instead.\n";
+                restartCurrentMap();
+            }
+            return;
+        }
+
+        if (input == "3" && ratio >= 0.5) {
+            string nextMapPath = buildNextLevelPath(currentMapPath);
+
+            if (world.loadFromFile(nextMapPath, false)) {
+                currentMapPath = nextMapPath;
+                levelNumber++;
+                cout << "Progress accepted. Loading next map: " << currentMapPath << "\n";
+            }
+            else {
+                cout << "No next map found. Game finished.\n";
+                saveHallOfFame();
+                running = false;
+            }
+            return;
+        }
+
+        cout << "Invalid choice. Restarting the same map for safety.\n";
+        restartCurrentMap();
     }
 
     void finishCurrentLevel() {
@@ -860,6 +944,7 @@ private:
             cout << "\nNo next level found. You completed all available levels!\n";
             cout << "Final score: " << world.getPlayer().getScore() << "\n";
             cout << "Total collected items: " << totalCollectedItems << "\n";
+            saveHallOfFame();
             running = false;
             return;
         }
@@ -885,12 +970,63 @@ private:
         }
 
         cout << "Final score: " << player.getScore() << "\n";
-        cout << "Collected items in session: " << totalCollectedItems + world.getCollectedItemsOnLevel() << "\n";
+        cout << "Collected items in session: "
+            << totalCollectedItems + world.getCollectedItemsOnLevel() << "\n";
+    }
+
+    void saveHallOfFame() const {
+        string name;
+
+        cout << "\nEnter your name for Hall of Fame: ";
+        getline(cin, name);
+
+        if (name.empty()) {
+            name = "Unknown Diver";
+        }
+
+        ofstream out("hall_of_fame.txt", ios::app);
+        if (!out) {
+            cout << "Could not save Hall of Fame file.\n";
+            return;
+        }
+
+        out << name << " | Score: " << world.getPlayer().getScore()
+            << " | Items: " << totalCollectedItems << "\n";
+
+        cout << "Result saved to hall_of_fame.txt\n";
+    }
+
+    void showHallOfFame() const {
+        ifstream in("hall_of_fame.txt");
+
+        cout << "\n=== HALL OF FAME ===\n";
+
+        if (!in) {
+            cout << "No records yet.\n\n";
+            return;
+        }
+
+        string line;
+        bool hasRecords = false;
+
+        while (getline(in, line)) {
+            if (!line.empty()) {
+                cout << line << "\n";
+                hasRecords = true;
+            }
+        }
+
+        if (!hasRecords) {
+            cout << "No records yet.\n";
+        }
+
+        cout << "\n";
     }
 
     void waitForExit() const {
         cout << "Press Enter to exit...";
-        cin.get();
+        string dummy;
+        getline(cin, dummy);
     }
 
     int extractLevelNumber(const string& path) const {
@@ -908,6 +1044,14 @@ private:
     }
 
     string buildNextLevelPath(const string& currentPath) const {
+        return replaceLastNumber(currentPath, 1);
+    }
+
+    string buildPreviousLevelPath(const string& currentPath) const {
+        return replaceLastNumber(currentPath, -1);
+    }
+
+    string replaceLastNumber(const string& currentPath, int delta) const {
         string result = currentPath;
 
         int lastDigitPos = -1;
@@ -919,7 +1063,7 @@ private:
         }
 
         if (lastDigitPos == -1) {
-            return result + "2";
+            return result;
         }
 
         int firstDigitPos = lastDigitPos;
@@ -929,9 +1073,13 @@ private:
         }
 
         int currentNumber = stoi(result.substr(firstDigitPos, lastDigitPos - firstDigitPos + 1));
-        int nextNumber = currentNumber + 1;
+        int newNumber = currentNumber + delta;
 
-        result.replace(firstDigitPos, lastDigitPos - firstDigitPos + 1, to_string(nextNumber));
+        if (newNumber < 1) {
+            newNumber = 1;
+        }
+
+        result.replace(firstDigitPos, lastDigitPos - firstDigitPos + 1, to_string(newNumber));
         return result;
     }
 
@@ -951,7 +1099,7 @@ private:
 int main() {
     string mapPath;
 
-    cout << "Enter map file path: ";
+    cout << "Enter map file path, for example level1.map: ";
     getline(cin, mapPath);
 
     if (!mapPath.empty() && mapPath.front() == '"' && mapPath.back() == '"') {

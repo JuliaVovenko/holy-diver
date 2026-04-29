@@ -7,8 +7,16 @@
       "RelativeMoniker": "D:0:0:{4F64EB2E-FFBD-4BF2-A513-EC2C9AF0A30D}|Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti.vcxproj|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level.map||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\level.map||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level3.map||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\level3.map||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level2.map||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\level2.map||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level1.map||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Iuliia_Vovenko_Ohjelmointi_projekti\\level1.map||{3B902123-F8A7-4915-9F01-361F908088D0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,19 +26,45 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "level.map",
-              "DocumentMoniker": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level.map",
-              "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\level.map",
-              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level.map",
-              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\level.map",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAQAAAAAAAAAA==",
+              "Title": "level3.map",
+              "DocumentMoniker": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level3.map",
+              "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\level3.map",
+              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level3.map",
+              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\level3.map",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-03-25T12:29:32.573Z",
+              "WhenOpened": "2026-04-29T09:52:43.832Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "level2.map",
+              "DocumentMoniker": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level2.map",
+              "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\level2.map",
+              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level2.map",
+              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\level2.map",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-04-29T09:51:28.902Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "level1.map",
+              "DocumentMoniker": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level1.map",
+              "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\level1.map",
+              "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\level1.map",
+              "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\level1.map",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-04-29T09:50:59.518Z",
               "EditorCaption": ""
             },
             {
@@ -41,7 +75,7 @@
               "RelativeDocumentMoniker": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
               "ToolTip": "C:\\Users\\voven\\holy-diver\\Iuliia_Vovenko_Ohjelmointi_projekti\\Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
               "RelativeToolTip": "Iuliia_Vovenko_Ohjelmointi_projekti\\main.cpp",
-              "ViewState": "AgIAAKMDAAAAAAAAAAAiwMkDAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAEEEAAAAAAAAAAAAAE0EAAA4AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-01-14T12:10:45.058Z",
               "EditorCaption": ""
